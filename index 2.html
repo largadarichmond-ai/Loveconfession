@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>For Anica</title>
+<style>
+  :root{
+    --bg: linear-gradient(135deg,#fff8fb 0%, #ffeef6 100%);
+    --pink: #ff9fc9;
+    --deep-pink: #ff6fa3;
+    --paper: #fffdf8;
+    --text: #2b2b34;
+    --shadow: rgba(0,0,0,0.12);
+    --accent: #ff6f9a;
+    font-family: 'Segoe UI', Roboto, system-ui, Arial, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg);
+    color:var(--text);
+    overflow:hidden;
+    padding:30px;
+  }
+  .wrap{width:550px; max-width:95vw; text-align:center; position:relative; z-index:2;}
+
+  .controls{
+    display:flex; 
+    justify-content:center; 
+    gap:14px; 
+    margin-top:20px; /* nilipat sa ibaba */
+  }
+  button{
+    border:none;
+    background:var(--accent);
+    color:white;
+    font-weight:600;
+    padding:12px 20px;
+    border-radius:999px;
+    cursor:pointer;
+    font-size:16px;
+    box-shadow:0 6px 14px rgba(0,0,0,0.12);
+  }
+  button.secondary{background:transparent; color:var(--accent); border:2px solid var(--accent);}
+
+  .stage{
+    perspective:1200px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .envelope{
+    width:500px; height:340px; position:relative;
+    transform-style:preserve-3d;
+    transition:transform .6s cubic-bezier(.2,.9,.3,1);
+    margin:0 auto;
+  }
+  .envelope .body{
+    position:absolute; inset:0; border-radius:12px;
+    background:linear-gradient(180deg,var(--pink), var(--deep-pink));
+    box-shadow:0 12px 36px var(--shadow);
+  }
+  .flap{
+    position:absolute; left:0; right:0; top:0;
+    height:50%; 
+    transform-origin:top center;
+    background:linear-gradient(180deg,#ffd6e8 0%, #fff1f7 40%);
+    box-shadow:0 8px 20px rgba(0,0,0,0.08);
+    transition:transform .9s cubic-bezier(.2,.9,.3,1);
+    z-index:6;
+
+    /* Baliktad na triangle */
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  .letter{
+    position:absolute; left:20px; right:20px; bottom:14px; top:50px;
+    background:var(--paper); border-radius:10px;
+    box-shadow:0 14px 36px rgba(0,0,0,0.12);
+    padding:26px; overflow:auto;
+    transform:translateY(12%) scale(.98);
+    opacity:0;
+    transition:transform .7s cubic-bezier(.2,.9,.3,1), opacity .45s;
+    z-index:3;
+    text-align:left; 
+  }
+  .letter h2{
+    font-size:20px; 
+    text-align:center;
+    font-family:'Brush Script MT', cursive, serif;
+    font-weight:bold;
+  }
+  .letter p{
+    font-family:'Brush Script MT', cursive, serif;
+    font-size:15px; 
+    line-height:1.6; 
+    margin-top:10px; 
+    white-space:pre-line;
+  }
+
+  .envelope.open .flap{transform:rotateX(180deg) translateY(-8px);}
+  .envelope.open .letter{transform:translateY(-8%) scale(1); opacity:1;}
+
+  .hint{margin-top:12px; font-size:14px; color:#6b6b73;}
+
+  .floating-heart{
+    position:absolute;
+    bottom:-50px;
+    font-size:20px;
+    color:rgba(255,105,180,0.8);
+    animation: floatUp 6s linear infinite;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  @keyframes floatUp{
+    0%{
+      transform: translate(0,0) scale(0.8) rotate(0deg);
+      opacity:1;
+    }
+    25%{
+      transform: translate(10px,-25vh) scale(1) rotate(15deg);
+    }
+    50%{
+      transform: translate(-10px,-50vh) scale(1.1) rotate(-10deg);
+    }
+    75%{
+      transform: translate(15px,-75vh) scale(1.05) rotate(20deg);
+    }
+    100%{
+      transform: translate(0,-110vh) scale(1.2) rotate(0deg);
+      opacity:0;
+    }
+  }
+
+  .bear{
+    position:absolute; bottom:0; left:50%;
+    transform:translateX(-50%);
+    font-size:80px;
+    animation:wave 2s infinite ease-in-out;
+    z-index:1;
+  }
+  @keyframes wave{
+    0%,100%{transform:translateX(-50%) rotate(0deg);}
+    50%{transform:translateX(-50%) rotate(10deg);}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="stage">
+      <div id="env" class="envelope">
+        <div class="body"></div>
+        <div class="flap"></div>
+        <article class="letter" id="letter">
+          <h2>Dear Anica,</h2>
+          <p id="typed"></p>
+        </article>
+      </div>
+    </div>
+
+    <!-- Buttons moved under the envelope -->
+    <div class="controls">
+      <button id="openBtn">Open</button>
+      <button id="closeBtn" class="secondary">Close</button>
+    </div>
+
+    <div class="hint">Click <strong>Open</strong> to reveal the letter. Click <strong>Close</strong> to fold it back.</div>
+  </div>
+
+  <div class="bear">🐻💕</div>
+
+  <audio id="clickSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7c7d06.mp3?filename=pop-94319.mp3"></audio>
+
+  <script>
+    const env = document.getElementById('env');
+    const openBtn = document.getElementById('openBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const typed = document.getElementById('typed');
+    const clickSound = document.getElementById('clickSound');
+
+    const message = `
+From the very first day we started talking, I felt something special. In just a month of knowing you, you’ve already left such a deep mark on me. Your presence, your words, and even the smallest things you do brighten up my days more than you can imagine.
+
+I find myself excited to check my phone, not for anything else, but for your messages. They may be simple or random at times, but for me, they mean the world. You have this way of making me smile without even trying, and that’s rare. You remind me that genuine connections still exist, and I feel so lucky that ours is one of them.
+
+I wrote this letter to let you know something important: I truly like you. But more than just liking you, I admire who you are, your kindness, your sincerity, the way you carry yourself, and the light you bring to others. I want you to know that my intentions are serious. I want to court you, not just with words or sweet gestures, but with consistent actions that will show you how much I value and respect you.
+
+I may not be perfect, but I promise to always give my best. I want to be the person you can lean on when you’re tired, the one who listens when you need to talk, and the one who supports you in chasing your dreams. I want to share not just laughter,u but also the quiet, heavy moments that life sometimes brings. Because to me, real love isn’t just about the good days, it’s about choosing each other even through the storms.
+
+I don’t want to rush things. I respect your pace and your feelings. But I don’t want to waste another day without telling you how much you mean to me. So here I am, writing this, taking a step forward, hoping you’ll allow me the chance to prove that my words aren’t empty, that they come with genuine effort and loyalty.
+
+Anica, I hope that one day, when you look back, you’ll remember this moment as the start of something beautiful. Something true. Something worth keeping.
+
+With sincerity and hope,  
+Rich
+`;
+
+    let typingInterval;
+
+    function playSound(){
+      clickSound.currentTime = 0;
+      clickSound.play();
+    }
+
+    function typeText(text, element, speed=30){
+      element.textContent = "";
+      let i=0;
+      typingInterval = setInterval(()=>{
+        if(i < text.length){
+          element.textContent += text.charAt(i);
+          element.scrollTop = element.scrollHeight;
+          i++;
+        } else {
+          clearInterval(typingInterval);
+        }
+      }, speed);
+    }
+
+    function openEnvelope(){
+      env.classList.add('open');
+      playSound();
+      typed.textContent = "";
+      typeText(message, typed, 30);
+    }
+    function closeEnvelope(){
+      env.classList.remove('open');
+      playSound();
+      clearInterval(typingInterval);
+      typed.textContent = "";
+    }
+
+    openBtn.addEventListener('click', openEnvelope);
+    closeBtn.addEventListener('click', closeEnvelope);
+
+    function createHeart(){
+      const heart = document.createElement('div');
+      heart.className = 'floating-heart';
+      heart.textContent = '❤️';
+      heart.style.left = Math.random()*100 + 'vw';
+      heart.style.fontSize = (12 + Math.random()*24) + 'px';
+      heart.style.animationDuration = (4 + Math.random()*5) + 's';
+      heart.style.animationDelay = Math.random()*2 + 's';
+      document.body.appendChild(heart);
+      setTimeout(()=>heart.remove(),10000);
+    }
+    setInterval(createHeart,400);
+  </script>
+</body>
+</html>
